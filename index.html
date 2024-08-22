@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feliz Cumpleaños</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            flex-direction: column;
+        }
+
+        #juego {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background-image: url('olaf.jpg');
+            background-size: cover;
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+
+        #jugador {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: #4CAF50;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .corazon {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            color: red;
+            font-size: 50px;
+            top: -50px;
+        }
+
+        /* Estilo para el modal */
+        #modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        #modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #modal-content h1 {
+            font-size: 28px;
+            color: green;
+            margin: 0;
+        }
+
+        #cerrar {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Estilo para las flechas de control */
+        #controles {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .flecha {
+            width: 50px;
+            height: 50px;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="juego">
+        <div id="jugador"></div>
+    </div>
+
+    <!-- Controles de flechas -->
+    <div id="controles">
+        <div id="flecha-izquierda" class="flecha">⬅️</div>
+        <div id="flecha-derecha" class="flecha">➡️</div>
+    </div>
+
+    <!-- Modal Popup -->
+    <div id="modal">
+        <div id="modal-content">
+            <h1>!TE QUIEROOO!</h1>
+            <h1>❤️❤️❤️❤️</h1>
+            <button id="cerrar">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        const juego = document.getElementById('juego');
+        const jugador = document.getElementById('jugador');
+        const modal = document.getElementById('modal');
+        const cerrarBtn = document.getElementById('cerrar');
+        const flechaIzquierda = document.getElementById('flecha-izquierda');
+        const flechaDerecha = document.getElementById('flecha-derecha');
+
+        let velocidadObstaculos = 5;
+        let intervaloObstaculos;
+        let intervaloMovimiento;
+        let tiempoSobrevivido = 0;
+        const tiempoObjetivo = 20; // Segundos que hay que sobrevivir para ganar
+
+        // Movimiento del jugador
+        let direccionJugador = null;
+
+        // Función para mover al jugador
+        function moverJugador() {
+            const jugadorRect = jugador.getBoundingClientRect();
+            const juegoRect = juego.getBoundingClientRect();
+
+            if (direccionJugador === 'izquierda' && jugadorRect.left > juegoRect.left) {
+                jugador.style.left = jugador.offsetLeft - 5 + 'px';
+            } else if (direccionJugador === 'derecha' && jugadorRect.right < juegoRect.right) {
+                jugador.style.left = jugador.offsetLeft + 5 + 'px';
+            }
+        }
+
+        // Crear corazones aleatorios
+        function crearCorazon() {
+            const corazon = document.createElement('div');
+            corazon.classList.add('corazon');
+            corazon.innerHTML = '❤️';
+            corazon.style.left = Math.random() * (juego.clientWidth - 50) + 'px';
+            juego.appendChild(corazon);
+
+            // Movimiento del corazón
+            const movimiento = setInterval(() => {
+                corazon.style.top = corazon.offsetTop + velocidadObstaculos + 'px';
+
+                // Colisión con el jugador
+                if (colision(jugador, corazon)) {
+                    terminarJuego();
+                    clearInterval(movimiento);
+                }
+
+                // Eliminar corazones que salen de la pantalla
+                if (corazon.offsetTop > juego.clientHeight) {
+                    corazon.remove();
+                    clearInterval(movimiento);
+                }
+            }, 20);
+        }
+
+        // Verificar colisión entre el jugador y un corazón
+        function colision(jugador, corazon) {
+            const jugadorRect = jugador.getBoundingClientRect();
+            const corazonRect = corazon.getBoundingClientRect();
+
+            return !(
+                jugadorRect.bottom < corazonRect.top ||
+                jugadorRect.top > corazonRect.bottom ||
+                jugadorRect.right < corazonRect.left ||
+                jugadorRect.left > corazonRect.right
+            );
+        }
+
+        // Iniciar el juego
+        function iniciarJuego() {
+            intervaloObstaculos = setInterval(crearCorazon, 1000);
+            intervaloMovimiento = setInterval(moverJugador, 20);
+
+            // Temporizador de supervivencia
+            const contadorTiempo = setInterval(() => {
+                tiempoSobrevivido++;
+
+                // Ganar el juego si el jugador sobrevive el tiempo suficiente
+                if (tiempoSobrevivido >= tiempoObjetivo) {
+                    mostrarModal();
+                    clearInterval(contadorTiempo);
+                }
+            }, 1000);
+        }
+
+        // Terminar el juego por colisión
+        function terminarJuego() {
+            clearInterval(intervaloObstaculos);
+            clearInterval(intervaloMovimiento);
+            alert('¡Perdiste! Inténtalo de nuevo.');
+            location.reload(); // Reiniciar el juego
+        }
+
+        // Mostrar el modal al ganar
+        function mostrarModal() {
+            modal.style.display = 'flex'; // Mostrar el modal
+            clearInterval(intervaloObstaculos);
+            clearInterval(intervaloMovimiento);
+        }
+
+        // Cerrar el modal y reiniciar el juego
+        cerrarBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            location.reload(); // Reiniciar el juego
+        });
+
+        // Detectar teclas para mover al jugador
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                direccionJugador = 'izquierda';
+            } else if (e.key === 'ArrowRight') {
+                direccionJugador = 'derecha';
+            }
+        });
+
+        // Detener el movimiento del jugador cuando se suelta la tecla
+        document.addEventListener('keyup', () => {
+            direccionJugador = null;
+        });
+
+        // Detectar clic en las flechas de control
+        flechaIzquierda.addEventListener('mousedown', () => {
+            direccionJugador = 'izquierda';
+        });
+        flechaDerecha.addEventListener('mousedown', () => {
+            direccionJugador = 'derecha';
+        });
+
+        // Detener el movimiento cuando se suelta la flecha
+        document.addEventListener('mouseup', () => {
+            direccionJugador = null;
+        });
+
+        // Iniciar el juego al cargar
+        iniciarJuego();
+    </script>
+
+</body>
+</html>
